@@ -2,7 +2,7 @@
 
 # Paceva for Garmin
 
-Ask Claude, ChatGPT or any MCP app about your own Garmin data: sleep, HRV, Body Battery, stress, resting heart rate, steps and activities.
+Ask Claude or any MCP app about your own Garmin data: sleep, HRV, Body Battery, stress, resting heart rate, steps and activities.
 
 > "How did I sleep last night?"
 > "Is my HRV trending down this month?"
@@ -11,47 +11,33 @@ Ask Claude, ChatGPT or any MCP app about your own Garmin data: sleep, HRV, Body 
 
 **Free, open source and local.** It runs on your computer with your own [Garmin Personal API key](https://connect.garmin.com/app/settings/personalApiToken). Your data goes from Garmin to your computer to your AI app, and never through anyone else's server. It's read-only: it can't change anything in Garmin Connect.
 
-## 1. Get a Garmin Personal API key
+## Set up
 
-1. Open [Garmin Connect › Personal API Key](https://connect.garmin.com/app/settings/personalApiToken), signed in.
-2. Select **Create Key**, accept the terms and choose how long it lasts (up to a year).
-3. Copy the key. Garmin shows it only once.
+### Claude Desktop: one download
 
-## 2. Add it to your AI app
+1. Download **[paceva-garmin.mcpb](https://paceva.app/download/paceva-garmin.mcpb)** and open it.
+2. Claude asks for your Garmin key: open [Garmin Connect › Personal API Key](https://connect.garmin.com/app/settings/personalApiToken), select **Create Key**, copy it, paste it in.
+3. Ask Claude: "How did I sleep last night?"
 
-### Claude Desktop (easiest)
+### Everything else: one command
 
-Download **[paceva-garmin.mcpb](https://paceva.app/download/paceva-garmin.mcpb)**, double-click it, and paste your key when Claude asks. That's it.
-
-### Everything else
-
-These need [Node.js](https://nodejs.org) 20 or newer. First save your key (it's hidden as you paste and checked with Garmin):
+Needs [Node.js](https://nodejs.org) 20 or newer. In a terminal:
 
 ```sh
-npx github:OwenScheuer/paceva-garmin-mcp setup
+npx github:OwenScheuer/paceva-garmin-mcp
 ```
 
-Then add the server:
+It opens Garmin for you, picks up the key once you've copied it, checks it with Garmin, and adds itself to **Claude Desktop, Claude Code, Cursor and Windsurf**, whichever you have. Restart the app and ask away.
 
-**Claude Code**
-
-```sh
-claude mcp add garmin -- npx -y github:OwenScheuer/paceva-garmin-mcp
-```
-
-**Cursor, VS Code, Windsurf, Claude Desktop (manual) and others:** add to the app's MCP servers:
+For any other MCP app, add this to its MCP servers:
 
 ```json
-{
-  "mcpServers": {
-    "garmin": { "command": "npx", "args": ["-y", "github:OwenScheuer/paceva-garmin-mcp"] }
-  }
-}
+"garmin": { "command": "npx", "args": ["-y", "github:OwenScheuer/paceva-garmin-mcp"] }
 ```
 
-**ChatGPT** only connects to remote servers over the internet, not to local ones, so it can't use this yet.
+**ChatGPT** only connects to servers on the internet, not ones on your computer, so it can't use this yet.
 
-To check your key at any time: `npx github:OwenScheuer/paceva-garmin-mcp check`.
+New key later? `npx github:OwenScheuer/paceva-garmin-mcp --new-key`. Check it's working: `npx github:OwenScheuer/paceva-garmin-mcp check`.
 
 ## What it can read
 
@@ -85,8 +71,8 @@ Garmin's Personal API is for your own data. Each person uses their own key; plea
 
 ## Troubleshooting
 
-- **"Garmin didn't accept your Personal API key"**: it expired or was deleted. Make a new one, then run `npx github:OwenScheuer/paceva-garmin-mcp setup` again. (For the Claude Desktop extension, update the key in Settings › Extensions.)
-- **"No Garmin Personal API key found"**: run `npx github:OwenScheuer/paceva-garmin-mcp setup`.
+- **"Garmin didn't accept your Personal API key"**: it expired or was deleted. Run `npx github:OwenScheuer/paceva-garmin-mcp --new-key`. (For the Claude Desktop extension, update the key in Settings › Extensions.)
+- **"No Garmin Personal API key found"**: run `npx github:OwenScheuer/paceva-garmin-mcp` in a terminal.
 - **"Garmin is rate-limiting requests"**: wait a minute and ask again.
 
 ## Development

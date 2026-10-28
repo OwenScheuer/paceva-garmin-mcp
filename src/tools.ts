@@ -103,7 +103,7 @@ function fail(err: unknown): Result {
   return { content: [{ type: "text", text }], isError: true };
 }
 
-const NO_KEY = `No Garmin Personal API key found. Create one at ${KEY_PAGE}, then run \`npx github:OwenScheuer/paceva-garmin-mcp setup\` (or set GARMIN_PERSONAL_API_KEY in this app's MCP settings).`;
+const NO_KEY = `No Garmin Personal API key found. Create one at ${KEY_PAGE}, then run \`npx github:OwenScheuer/paceva-garmin-mcp --new-key\` in a terminal (or set GARMIN_PERSONAL_API_KEY in this app's MCP settings).`;
 
 /**
  * Run a section of a multi-part answer; one missing part doesn't sink the

@@ -2,16 +2,19 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { findApiKey, GarminClient, GarminError, KEY_PAGE, saveApiKey } from "./garmin.js";
+import { askHidden, install, PACKAGE } from "./install.js";
 import { INSTRUCTIONS, registerTools, today } from "./tools.js";
 import { VERSION } from "./version.js";
 
 const HELP = `paceva-garmin-mcp ${VERSION}
-Your own Garmin Connect data in Claude, ChatGPT or any MCP app. Free, local, read-only.
+Your own Garmin Connect data in Claude and other MCP apps. Free, local, read-only.
 
-  npx github:OwenScheuer/paceva-garmin-mcp setup   Save your Garmin Personal API key and check it works
-  npx github:OwenScheuer/paceva-garmin-mcp check   Check the saved key and show today's numbers
-  npx github:OwenScheuer/paceva-garmin-mcp         Run the MCP server (your AI app does this for you)
+  npx ${PACKAGE}              Set everything up (run it in a terminal)
+  npx ${PACKAGE} --new-key    Set up again with a new Garmin key
+  npx ${PACKAGE} check        Check the saved key and show today's numbers
+  npx ${PACKAGE} key          Save a key piped in, without adding to any app
 
+When an AI app starts it, it runs the MCP server instead.
 Get a key: ${KEY_PAGE}
 `;
 
@@ -25,90 +28,13 @@ async function serve(): Promise<void> {
   );
   registerTools(server, client);
   await server.connect(new StdioServerTransport());
-  if (!key) console.error(`paceva-garmin-mcp: no API key yet. Run: npx github:OwenScheuer/paceva-garmin-mcp setup`);
-}
-
-/** Ask for a line without echoing it, so the key never shows on screen. */
-function askHidden(question: string): Promise<string> {
-  const { stdin, stderr } = process;
-  if (!stdin.isTTY) {
-    // Piped in: read it all.
-    return new Promise((resolve) => {
-      let data = "";
-      stdin.setEncoding("utf8");
-      stdin.on("data", (c) => (data += c));
-      stdin.on("end", () => resolve(data.trim()));
-    });
-  }
-  stderr.write(question);
-  return new Promise((resolve, reject) => {
-    let value = "";
-    stdin.setRawMode(true);
-    stdin.resume();
-    stdin.setEncoding("utf8");
-    const onData = (chunk: string) => {
-      for (const ch of chunk) {
-        if (ch === "\r" || ch === "\n") {
-          stdin.setRawMode(false);
-          stdin.pause();
-          stdin.off("data", onData);
-          stderr.write("\n");
-          return resolve(value.trim());
-        }
-        if (ch === "\u0003") {
-          stdin.setRawMode(false);
-          stderr.write("\n");
-          return reject(new Error("cancelled"));
-        }
-        if (ch === "\u007f" || ch === "\b") {
-          if (value) {
-            value = value.slice(0, -1);
-            stderr.write("\b \b");
-          }
-        } else if (ch >= " ") {
-          value += ch;
-          stderr.write("•");
-        }
-      }
-    };
-    stdin.on("data", onData);
-  });
-}
-
-async function setup(): Promise<void> {
-  const out = (s = "") => process.stderr.write(`${s}\n`);
-  out("Paceva for Garmin: setup\n");
-  out(`1. Open ${KEY_PAGE}`);
-  out("2. Select Create Key, accept the terms, choose how long it lasts, then Create.");
-  out("3. Copy the key (Garmin shows it only once) and paste it here.\n");
-  const key = await askHidden("Garmin Personal API key: ");
-  if (!key) {
-    out("No key entered; nothing saved.");
-    process.exitCode = 1;
-    return;
-  }
-  out("Checking it with Garmin…");
-  try {
-    await new GarminClient({ apiKey: key }).verify();
-  } catch (err) {
-    out(err instanceof Error ? err.message : String(err));
-    process.exitCode = 1;
-    return;
-  }
-  const path = await saveApiKey(key);
-  out(`Saved to ${path} (only you can read it).\n`);
-  out("Now add Paceva to your AI app:\n");
-  out("  Claude Code:");
-  out("    claude mcp add garmin -- npx -y github:OwenScheuer/paceva-garmin-mcp\n");
-  out("  Claude Desktop, Cursor, VS Code and others: add this to the app's MCP servers:");
-  out(`    "garmin": { "command": "npx", "args": ["-y", "github:OwenScheuer/paceva-garmin-mcp"] }\n`);
-  out("Then ask: \"How did I sleep last night?\"");
+  if (!key) console.error(`paceva-garmin-mcp: no API key yet. Run in a terminal: npx github:OwenScheuer/paceva-garmin-mcp`);
 }
 
 async function check(): Promise<void> {
   const key = await findApiKey();
   if (!key) {
-    console.error("No key found. Run: npx github:OwenScheuer/paceva-garmin-mcp setup");
+    console.error("No key found. Run in a terminal: npx github:OwenScheuer/paceva-garmin-mcp");
     process.exitCode = 1;
     return;
   }
@@ -122,17 +48,34 @@ async function check(): Promise<void> {
   console.error(JSON.stringify(summary).slice(0, 600));
 }
 
+/** Save a key without touching any app: `pbpaste | npx … key`. */
+async function saveKey(): Promise<void> {
+  const key = await askHidden("Garmin Personal API key: ");
+  if (!key) throw new Error("No key given; nothing saved.");
+  await new GarminClient({ apiKey: key }).verify();
+  console.error(`Saved to ${await saveApiKey(key)} (only you can read it).`);
+}
+
 const command = process.argv[2];
+// Run by hand in a terminal, it sets things up; run by an AI app (pipes, not
+// a terminal), it's the MCP server.
+const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
 const run =
-  command === "setup"
-    ? setup
-    : command === "check"
-      ? check
-      : command === "--version" || command === "-v"
-        ? async () => console.log(VERSION)
-        : command === "--help" || command === "-h" || command === "help"
-          ? async () => console.log(HELP)
-          : serve;
+  command === "setup" || command === "install"
+    ? () => install()
+    : command === "--new-key"
+      ? () => install({ newKey: true })
+      : command === "key"
+        ? saveKey
+        : command === "check"
+          ? check
+          : command === "--version" || command === "-v"
+            ? async () => console.log(VERSION)
+            : command === "--help" || command === "-h" || command === "help"
+              ? async () => console.log(HELP)
+              : !command && interactive
+                ? () => install()
+                : serve;
 
 run().catch((err) => {
   console.error(err instanceof GarminError || err instanceof Error ? err.message : String(err));
