@@ -56,75 +56,27 @@ export function sportOf(typeKey: string): "run" | "bike" | "swim" | "other" {
   return "other";
 }
 
-const round = (n: number, dp = 1) => Math.round(n * 10 ** dp) / 10 ** dp;
-const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v > 0 ? v : undefined);
-/** A positive number rounded, else undefined. */
-const n = (v: unknown, dp = 0) => (num(v) ? round(v as number, dp) : undefined);
+/**
+ * The fields the training log keeps from each activity in Garmin's list,
+ * under Garmin's own names with Garmin's values untouched. The full record
+ * runs to ~2 KB of flags and map data; this keeps a year of workouts small
+ * enough to read in one go.
+ */
+const LOG_FIELD =
+  /^(activityId|activityName|startTimeLocal|activityType|distance|duration|movingDuration|elapsedDuration|averageSpeed|maxSpeed|avgGradeAdjustedSpeed|elevationGain|elevationLoss|averageHR|maxHR|avgPower|maxPower|normPower|max20MinPower|maxFtp|trainingStressScore|intensityFactor|average(Running|Biking|Swim)Cadence\w*|averageSwolf|poolLength|activeLengths|aerobicTrainingEffect|anaerobicTrainingEffect|trainingEffectLabel|activityTrainingLoad|vO2MaxValue|calories|moderateIntensityMinutes|vigorousIntensityMinutes|totalSets|totalReps|lapCount|pr|fastestSplit_\d+|hrTimeInZone_\d|powerTimeInZone_\d|maxAvgPower_\d+)$/;
 
-/** Seconds as m:ss (or h:mm:ss). */
-export function clock(sec: number): string {
-  const t = Math.round(sec);
-  const h = Math.floor(t / 3600);
-  const m = Math.floor((t % 3600) / 60);
-  const s = String(t % 60).padStart(2, "0");
-  return h ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
-}
-
-/** Pace for `per` metres at `speed` m/s. */
-const pace = (speed: number | undefined, per: number) => (speed ? clock(per / speed) : undefined);
-
-/** One activity from Garmin's list as a compact training-log row. */
+/** One activity from Garmin's list, cut to the training-log fields. */
 export function logRow(a: Record<string, unknown>): Record<string, unknown> {
-  const typeKey = String((a.activityType as { typeKey?: string } | undefined)?.typeKey ?? "other");
-  const sport = sportOf(typeKey);
-  const distance = num(a.distance);
-  const speed = num(a.averageSpeed);
-  const gap = num(a.avgGradeAdjustedSpeed);
-  const zones = [1, 2, 3, 4, 5].map((z) => num(a[`hrTimeInZone_${z}`]));
-  const split = (k: string) => (num(a[k]) ? clock(a[k] as number) : undefined);
-  const row: Record<string, unknown> = {
-    id: a.activityId,
-    date: typeof a.startTimeLocal === "string" ? a.startTimeLocal.slice(0, 16) : undefined,
-    sport,
-    type: typeKey,
-    name: a.activityName,
-    km: distance ? round(distance / 1000, 2) : undefined,
-    min: num(a.duration) ? round((a.duration as number) / 60) : undefined,
-    moving_min: num(a.movingDuration) ? round((a.movingDuration as number) / 60) : undefined,
-    pace_km: sport === "run" || typeKey === "walking" || typeKey === "hiking" ? pace(speed, 1000) : undefined,
-    gap_pace_km: sport === "run" ? pace(gap, 1000) : undefined,
-    kmh: sport === "bike" && speed ? round(speed * 3.6) : undefined,
-    pace_100m: sport === "swim" ? pace(speed, 100) : undefined,
-    elev_gain_m: num(a.elevationGain) ? Math.round(a.elevationGain as number) : undefined,
-    avg_hr: n(a.averageHR),
-    max_hr: n(a.maxHR),
-    avg_power: n(a.avgPower),
-    norm_power: n(a.normPower),
-    best_20min_power: n(a.max20MinPower),
-    ftp: n(a.maxFtp),
-    tss: n(a.trainingStressScore, 1),
-    intensity_factor: n(a.intensityFactor, 2),
-    cadence:
-      n(a.averageRunningCadenceInStepsPerMinute) ??
-      n(a.averageBikingCadenceInRevPerMinute) ??
-      n(a.averageSwimCadenceInStrokesPerMinute),
-    aerobic_te: n(a.aerobicTrainingEffect, 1),
-    anaerobic_te: n(a.anaerobicTrainingEffect, 1),
-    te_label: a.trainingEffectLabel,
-    load: n(a.activityTrainingLoad),
-    fastest_1k: split("fastestSplit_1000"),
-    fastest_mile: split("fastestSplit_1609"),
-    fastest_5k: split("fastestSplit_5000"),
-    fastest_10k: split("fastestSplit_10000"),
-    fastest_100m: split("fastestSplit_100"),
-    fastest_400m: split("fastestSplit_400"),
-    fastest_40k: split("fastestSplit_40000"),
-    hr_zone_min: zones.some(Boolean) ? zones.map((z) => (z ? round(z / 60) : 0)) : undefined,
-    pr: a.pr === true || undefined,
-  };
-  for (const k of Object.keys(row)) if (row[k] === undefined || row[k] === null) delete row[k];
+  const row: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(a)) {
+    if (!LOG_FIELD.test(k) || v === null || v === undefined || v === false) continue;
+    row[k] = k === "activityType" && v && typeof v === "object" ? { typeKey: (v as { typeKey?: unknown }).typeKey } : v;
+  }
   return row;
 }
+
+const typeKeyOf = (a: Record<string, unknown>) =>
+  String((a.activityType as { typeKey?: string } | undefined)?.typeKey ?? "");
 
 type Result = { content: { type: "text"; text: string }[]; isError?: boolean };
 
@@ -194,7 +146,7 @@ export function registerTools(server: McpServer, client: GarminClient | null): v
   tool(
     "get_daily_overview",
     "Daily overview",
-    "One day at a glance: the daily summary (steps, resting heart rate, stress, calories, intensity minutes), last night's sleep, overnight HRV and Body Battery. Start here for questions like 'how recovered am I?' or 'how did I sleep?'.",
+    "One day from Garmin in one call: the daily summary (steps, resting heart rate, stress, calories, intensity minutes), the night's sleep, overnight HRV and Body Battery.",
     { date: day, include_series: series },
     async (g, { date, include_series }) => {
       const d = date ?? today();
@@ -213,7 +165,7 @@ export function registerTools(server: McpServer, client: GarminClient | null): v
   tool(
     "get_daily_summaries",
     "Daily summaries",
-    `Daily totals for a range of days: steps, distance, calories, resting heart rate, stress, intensity minutes, floors. Up to ${MAX_RANGE_DAYS} days per call. Good for trends.`,
+    `Daily totals for a range of days: steps, distance, calories, resting heart rate, stress, intensity minutes, floors. Up to ${MAX_RANGE_DAYS} days per call.`,
     { start_date: start, end_date: end },
     async (g, a) => {
       const [s, e] = range(a.start_date, a.end_date);
@@ -333,14 +285,14 @@ export function registerTools(server: McpServer, client: GarminClient | null): v
   tool(
     "get_training_log",
     "Training log",
-    `Every workout in a period as one compact row: date, sport, distance, time, pace or speed, grade-adjusted pace, elevation, heart rate, power (average, normalized, best 20 min, FTP), TSS, training effect and load, fastest splits (1 km, mile, 5K, 10K; 100 m and 400 m swims; 40 km rides) and minutes per heart rate zone. This is the raw material for race predictions, fitness trends and training-load questions: work those out from these rows yourself. Up to ${MAX_LOG_DAYS} days per call; 8–16 weeks is usually enough for a prediction.`,
+    `Every activity in a period, with the main fields from Garmin's activity list under Garmin's own names and values: distance (m), duration (s), speed (m/s), grade-adjusted speed, elevation, heart rate, cadence, power and power curve (maxAvgPower_<seconds>), TSS, intensity factor, training effect and load, fastest splits (fastestSplit_<metres>, in seconds) and seconds per heart rate and power zone. Up to ${MAX_LOG_DAYS} days per call.`,
     {
       start_date: start,
       end_date: end,
       sport: z
         .enum(["run", "bike", "swim", "other"])
         .optional()
-        .describe("Only this sport. Omit for everything."),
+        .describe("Only activities of this sport, by Garmin activity type. Omit for all."),
     },
     async (g, a) => {
       const [s, e] = range(a.start_date, a.end_date, MAX_LOG_DAYS);
@@ -354,19 +306,12 @@ export function registerTools(server: McpServer, client: GarminClient | null): v
         })) as Record<string, unknown>[] | null;
         if (!Array.isArray(page) || page.length === 0) break;
         for (const act of page) {
-          const row = logRow(act);
-          if (!a.sport || row.sport === a.sport) rows.push(row);
+          if (!a.sport || sportOf(typeKeyOf(act)) === a.sport) rows.push(logRow(act));
         }
         if (page.length < 100) break;
       }
-      // Rows are already compact; a year of them must not be summarized away.
-      return text({
-        from: s,
-        to: e,
-        workouts: rows.length,
-        units: "km, minutes, m, bpm, W; paces as m:ss",
-        rows,
-      });
+      // Rows are already cut down; a year of them must not be summarized away.
+      return text({ from: s, to: e, activities: rows.length, rows });
     },
   );
 
@@ -392,7 +337,7 @@ export function registerTools(server: McpServer, client: GarminClient | null): v
   tool(
     "get_profile",
     "Profile and zones",
-    "The athlete's profile settings (units, age, sex, height, weight and other values set in Garmin Connect) and heart rate zones. Use it to interpret other numbers.",
+    "Profile settings from Garmin Connect (units, age, sex, height, weight and others) and heart rate zones.",
     {},
     async (g) => {
       const [settings, heartRateZones] = await Promise.all([
@@ -417,7 +362,7 @@ export function registerTools(server: McpServer, client: GarminClient | null): v
   tool(
     "get_fitness_age",
     "Fitness age",
-    "Garmin's fitness age for a date, and what moves it.",
+    "Garmin's fitness age for a date.",
     { date: day },
     async (g, a) => ok(await g.get(`/fitnessage-service/fitnessage/v2/${a.date ?? today()}`)),
   );
@@ -444,7 +389,7 @@ export function registerTools(server: McpServer, client: GarminClient | null): v
   tool(
     "get_menstrual_cycle",
     "Menstrual cycle",
-    "Cycle tracking for a date: cycle day, phase and predictions, if the athlete tracks their cycle in Garmin Connect.",
+    "Cycle tracking for a date, if it's tracked in Garmin Connect.",
     { date: day },
     async (g, a) => {
       const d = a.date ?? today();
@@ -457,4 +402,4 @@ export function registerTools(server: McpServer, client: GarminClient | null): v
   );
 }
 
-export const INSTRUCTIONS = `Read-only access to one person's own Garmin Connect data through Garmin's Personal API. Every number these tools return is Garmin's; anything you calculate from them is yours, so keep the two apart. Dates are calendar dates in the person's time zone; a night's sleep is filed under the morning it ended. For "how am I today" questions start with get_daily_overview; for trends use the range tools (up to ${MAX_RANGE_DAYS} days per call). For race predictions, fitness and training-load questions, pull get_training_log and work it out yourself from the raw rows; say that the prediction is your estimate from their Garmin data, give a range rather than one time, and show what it's based on. Long minute-by-minute series are summarized unless include_series is set. Training readiness, training status and recovery time have no Personal API endpoint. If a number isn't in a response, say it isn't available rather than guessing.`;
+export const INSTRUCTIONS = `Read-only access to the user's own Garmin Connect data through Garmin's Personal API. Responses are Garmin's data as Garmin returns it, in Garmin's field names and units (metres, seconds, metres per second), with empty fields and account IDs left out. Long minute-by-minute series are summarized as count, min, max and average unless include_series is set. Dates are YYYY-MM-DD in the user's time zone.`;

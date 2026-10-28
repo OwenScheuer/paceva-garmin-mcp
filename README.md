@@ -61,12 +61,12 @@ To check your key at any time: `npx paceva-garmin-mcp check`.
 | `get_hrv` | Overnight HRV, baseline and status |
 | `get_body_battery` | Charged, drained, high and low |
 | `get_stress` · `get_steps` · `get_heart_rate` · `get_spo2` | Daily stress, steps, heart rate and Pulse Ox |
-| `get_training_log` | Every workout in a period (up to a year) as one compact row: pace, grade-adjusted pace, heart rate, power, TSS, fastest splits, time in zones |
+| `get_training_log` | Every activity in a period (up to a year) with Garmin's main fields: distance, time, speed, heart rate, power, TSS, fastest splits, time in zones |
 | `list_activities` · `get_activity` | Your activities, and any one in full |
 | `get_profile` | Profile settings and heart rate zones |
 | `get_weight` · `get_fitness_age` · `get_hydration` · `get_food_log` · `get_menstrual_cycle` | The rest of what Garmin's Personal API offers |
 
-**Predictions are your AI's, from your raw data.** There's no prediction model in here: ask "what could I run a 10K in?" and your AI reads your training log and works it out, showing what it's based on.
+**Just Garmin's data.** No scores, models or advice are added: every number is Garmin's, in Garmin's own field names and units. Ask "what could I run a 10K in?" and any prediction is your AI's own, made from that data.
 
 Ranges are capped at 92 days per call (a year for the training log). Minute-by-minute series (heart rate through the day, sleep stages) come back as a count, min, max and average unless your AI asks for the full series.
 

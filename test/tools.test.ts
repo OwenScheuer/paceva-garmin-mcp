@@ -7,7 +7,6 @@ import { compact } from "../src/compact.js";
 import { GarminClient } from "../src/garmin.js";
 import {
   addDays,
-  clock,
   INSTRUCTIONS,
   logRow,
   MAX_LOG_DAYS,
@@ -128,61 +127,42 @@ describe("tools", () => {
 });
 
 describe("training log", () => {
-  const run = {
-    activityId: 7,
-    startTimeLocal: "2026-10-20 07:05:11",
-    activityType: { typeKey: "running" },
-    activityName: "Tempo",
-    distance: 10000,
-    duration: 2700,
-    movingDuration: 2690,
-    averageSpeed: 10000 / 2700,
-    avgGradeAdjustedSpeed: 10000 / 2650,
-    elevationGain: 84.4,
-    averageHR: 162,
-    maxHR: 178,
-    fastestSplit_5000: 1320,
-    hrTimeInZone_1: 60,
-    hrTimeInZone_4: 1500,
-    ownerFullName: "A Person",
-    pr: true,
-  };
-
-  it("turns a run into a compact row with paces as m:ss", () => {
-    expect(logRow(run)).toEqual({
-      id: 7,
-      date: "2026-10-20 07:05",
-      sport: "run",
-      type: "running",
-      name: "Tempo",
-      km: 10,
-      min: 45,
-      moving_min: 44.8,
-      pace_km: "4:30",
-      gap_pace_km: "4:25",
-      elev_gain_m: 84,
-      avg_hr: 162,
-      max_hr: 178,
-      fastest_5k: "22:00",
-      hr_zone_min: [1, 0, 0, 25, 0],
-      pr: true,
-    });
-  });
-
-  it("gives rides km/h and power, swims pace per 100 m", () => {
-    const ride = logRow({
-      activityType: { typeKey: "road_biking" },
-      averageSpeed: 10,
-      normPower: 231,
-      trainingStressScore: 88.24,
-      intensityFactor: 0.7812,
-    });
-    expect(ride).toMatchObject({ sport: "bike", kmh: 36, norm_power: 231, tss: 88.2, intensity_factor: 0.78 });
-    expect(logRow({ activityType: { typeKey: "running" }, aerobicTrainingEffect: 2.799999952316284, averageRunningCadenceInStepsPerMinute: 157.95 })).toMatchObject({ aerobic_te: 2.8, cadence: 158 });
-    expect(ride.pace_km).toBeUndefined();
-    expect(logRow({ activityType: { typeKey: "lap_swimming" }, averageSpeed: 1.25 })).toMatchObject({
-      sport: "swim",
-      pace_100m: "1:20",
+  it("keeps Garmin's own fields and values, and drops the rest", () => {
+    const garmin = {
+      activityId: 7,
+      activityName: "Tempo",
+      startTimeLocal: "2026-10-20 07:05:11",
+      activityType: { typeId: 1, typeKey: "running", parentTypeId: 17 },
+      distance: 10000.37,
+      duration: 2700.5,
+      averageSpeed: 3.7036999464035034,
+      avgGradeAdjustedSpeed: 3.77,
+      averageHR: 162,
+      aerobicTrainingEffect: 2.799999952316284,
+      fastestSplit_5000: 1320.2,
+      hrTimeInZone_4: 1500.1,
+      maxAvgPower_1200: 281,
+      ownerFullName: "A Person",
+      startLatitude: 42.1,
+      privacy: { typeKey: "private" },
+      pr: false,
+      hasImages: false,
+      minTemperature: 12,
+    };
+    expect(logRow(garmin)).toEqual({
+      activityId: 7,
+      activityName: "Tempo",
+      startTimeLocal: "2026-10-20 07:05:11",
+      activityType: { typeKey: "running" },
+      distance: 10000.37,
+      duration: 2700.5,
+      averageSpeed: 3.7036999464035034,
+      avgGradeAdjustedSpeed: 3.77,
+      averageHR: 162,
+      aerobicTrainingEffect: 2.799999952316284,
+      fastestSplit_5000: 1320.2,
+      hrTimeInZone_4: 1500.1,
+      maxAvgPower_1200: 281,
     });
   });
 
@@ -195,11 +175,6 @@ describe("training log", () => {
     );
     expect(["lap_swimming", "open_water_swimming"].map(sportOf)).toEqual(["swim", "swim"]);
     expect(["strength_training", "walking", "yoga"].map(sportOf)).toEqual(Array(3).fill("other"));
-  });
-
-  it("formats hours", () => {
-    expect(clock(3725)).toBe("1:02:05");
-    expect(clock(59.6)).toBe("1:00");
   });
 
   it("pages through Garmin 100 at a time and filters by sport", async () => {
@@ -227,12 +202,12 @@ describe("training log", () => {
     });
     const body = JSON.parse(text(r));
     expect(served).toBe(3);
-    expect(body.workouts).toBe(115); // 230 workouts, half of them runs
+    expect(body.activities).toBe(115); // 230 activities, half of them runs
     const all = JSON.parse(
       text(await mcp.callTool({ name: "get_training_log", arguments: { start_date: addDays(today(), -300) } })),
     );
     expect(all.rows).toHaveLength(230); // a long log is never summarized away
-    expect(body.rows.every((row: { sport: string }) => row.sport === "run")).toBe(true);
+    expect(body.rows.every((row: { activityType: { typeKey: string } }) => row.activityType.typeKey === "running")).toBe(true);
   });
 
   it("allows a year but not more", () => {
