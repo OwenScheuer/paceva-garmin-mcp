@@ -1,0 +1,38 @@
+{
+  "name": "paceva-garmin-mcp",
+  "version": "0.1.0",
+  "description": "Free, local MCP server for your own Garmin Connect data (sleep, HRV, Body Battery, activities) using Garmin's Personal API key.",
+  "license": "MIT",
+  "author": "Owen Scheuer",
+  "homepage": "https://github.com/OwenScheuer/paceva-garmin-mcp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OwenScheuer/paceva-garmin-mcp.git"
+  },
+  "mcpName": "io.github.OwenScheuer/paceva-garmin",
+  "keywords": ["mcp", "garmin", "garmin-connect", "claude", "chatgpt", "running", "triathlon", "hrv", "sleep"],
+  "type": "module",
+  "bin": {
+    "paceva-garmin-mcp": "dist/index.js"
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && chmod +x dist/index.js",
+    "dev": "tsc -p tsconfig.json --watch",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

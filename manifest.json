@@ -1,0 +1,36 @@
+{
+  "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/mcpb/main/dist/mcpb-manifest-v0.3.schema.json",
+  "manifest_version": "0.3",
+  "name": "paceva-garmin",
+  "display_name": "Paceva for Garmin",
+  "version": "0.1.0",
+  "description": "Your own Garmin Connect data in Claude: sleep, HRV, Body Battery, stress and activities. Free, local, read-only.",
+  "long_description": "Uses Garmin's Personal API key to read your own Garmin Connect data on your computer. Nothing goes through Paceva's servers: Claude talks to this extension, and the extension talks to Garmin. Create a key at https://connect.garmin.com/app/settings/personalApiToken and paste it when Claude asks.",
+  "author": { "name": "Owen Scheuer", "url": "https://paceva.app" },
+  "repository": { "type": "git", "url": "https://github.com/OwenScheuer/paceva-garmin-mcp" },
+  "homepage": "https://github.com/OwenScheuer/paceva-garmin-mcp",
+  "support": "https://github.com/OwenScheuer/paceva-garmin-mcp/issues",
+  "icon": "icon.png",
+  "license": "MIT",
+  "keywords": ["garmin", "fitness", "sleep", "hrv", "running", "cycling", "triathlon"],
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/index.js"],
+      "env": { "GARMIN_PERSONAL_API_KEY": "${user_config.garmin_api_key}" }
+    }
+  },
+  "user_config": {
+    "garmin_api_key": {
+      "type": "string",
+      "title": "Garmin Personal API key",
+      "description": "Create one at connect.garmin.com › Settings › Personal API Key. Garmin shows it only once.",
+      "sensitive": true,
+      "required": true
+    }
+  },
+  "tools_generated": true,
+  "compatibility": { "platforms": ["darwin", "win32", "linux"], "runtimes": { "node": ">=20.0.0" } }
+}
