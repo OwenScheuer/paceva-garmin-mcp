@@ -1,3 +1,5 @@
+<p align="center"><img src=".github/header.jpg" alt="Paceva: your Garmin data, in Claude" width="100%"></p>
+
 # Paceva for Garmin
 
 Ask Claude, ChatGPT or any MCP app about your own Garmin data: sleep, HRV, Body Battery, stress, resting heart rate, steps and activities.
