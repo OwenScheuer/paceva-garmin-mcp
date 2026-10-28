@@ -10,12 +10,26 @@
     "url": "git+https://github.com/OwenScheuer/paceva-garmin-mcp.git"
   },
   "mcpName": "io.github.OwenScheuer/paceva-garmin",
-  "keywords": ["mcp", "garmin", "garmin-connect", "claude", "chatgpt", "running", "triathlon", "hrv", "sleep"],
+  "keywords": [
+    "mcp",
+    "garmin",
+    "garmin-connect",
+    "claude",
+    "chatgpt",
+    "running",
+    "triathlon",
+    "hrv",
+    "sleep"
+  ],
   "type": "module",
   "bin": {
     "paceva-garmin-mcp": "dist/index.js"
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "engines": {
     "node": ">=20"
   },
@@ -24,7 +38,8 @@
     "dev": "tsc -p tsconfig.json --watch",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+    "prepublishOnly": "npm run typecheck && npm test && npm run build",
+    "prepare": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
