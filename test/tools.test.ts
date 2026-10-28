@@ -141,6 +141,17 @@ describe("compact", () => {
       },
     });
   });
+  it("drops IDs, the owner's name and profile photos, keeping the activity's own ID", () => {
+    expect(
+      compact({
+        activityId: 9,
+        ownerId: 1,
+        ownerFullName: "A Person",
+        ownerProfileImageUrlSmall: "https://x",
+        sleepNeed: { userProfilePk: 1, deviceId: 2, actual: 560 },
+      }),
+    ).toEqual({ activityId: 9, sleepNeed: { actual: 560 } });
+  });
   it("keeps series when asked", () => {
     const series = Array.from({ length: 50 }, (_, i) => [i, 1]);
     expect((compact({ heartRateValues: series }, { includeSeries: true }) as any).heartRateValues).toHaveLength(50);

@@ -2,12 +2,19 @@
  * Garmin's responses carry minute-by-minute series (heart rate, stress, Body
  * Battery, sleep stages) that run to thousands of numbers. An AI app only
  * needs those when someone asks about the shape of a day, so by default each
- * long series is replaced with its count and range, and empty fields are
- * dropped. Everything else passes through untouched.
+ * long series is replaced with its count and range. Empty fields and account
+ * plumbing are dropped. Everything else passes through untouched.
  */
 
 /** Keys Garmin uses for time series. */
 const SERIES_KEY = /(Values|ValuesArray|Levels|Movement|Readings|Descriptors|Samples|Points)$/i;
+/**
+ * Account plumbing that helps no answer: internal IDs, the owner's name and
+ * profile photos. Dropped so they aren't sent to the AI provider for nothing.
+ */
+const DROP_KEY =
+  /^(uuid|activityUUID|userProfilePk|userProfilePK|userProfileId|ownerId|ownerDisplayName|ownerFullName|ownerProfileImageUrl\w*|deviceId|hasImages|hasVideo|privacy)$/;
+
 /** A series longer than this is summarized. */
 const SERIES_MAX = 24;
 /** Any array longer than this is summarized, series key or not. */
@@ -26,6 +33,7 @@ export function compact(value: unknown, opts: CompactOptions = {}, key = ""): un
   if (typeof value === "object") {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (DROP_KEY.test(k)) continue;
       const c = compact(v, opts, k);
       if (c !== undefined) out[k] = c;
     }
