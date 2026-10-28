@@ -157,7 +157,7 @@ export class GarminClient {
     });
     if (res.status === 401 || res.status === 403) {
       throw new GarminError(
-        `Garmin didn't accept your Personal API key. It may have expired or been deleted. Create a new one at ${KEY_PAGE}, then run \`npx paceva-garmin-mcp setup\` again.`,
+        `Garmin didn't accept your Personal API key. It may have expired or been deleted. Create a new one at ${KEY_PAGE}, then run \`npx github:OwenScheuer/paceva-garmin-mcp setup\` again.`,
         res.status,
       );
     }

@@ -8,9 +8,9 @@ import { VERSION } from "./version.js";
 const HELP = `paceva-garmin-mcp ${VERSION}
 Your own Garmin Connect data in Claude, ChatGPT or any MCP app. Free, local, read-only.
 
-  npx paceva-garmin-mcp setup   Save your Garmin Personal API key and check it works
-  npx paceva-garmin-mcp check   Check the saved key and show today's numbers
-  npx paceva-garmin-mcp         Run the MCP server (your AI app does this for you)
+  npx github:OwenScheuer/paceva-garmin-mcp setup   Save your Garmin Personal API key and check it works
+  npx github:OwenScheuer/paceva-garmin-mcp check   Check the saved key and show today's numbers
+  npx github:OwenScheuer/paceva-garmin-mcp         Run the MCP server (your AI app does this for you)
 
 Get a key: ${KEY_PAGE}
 `;
@@ -25,7 +25,7 @@ async function serve(): Promise<void> {
   );
   registerTools(server, client);
   await server.connect(new StdioServerTransport());
-  if (!key) console.error(`paceva-garmin-mcp: no API key yet. Run: npx paceva-garmin-mcp setup`);
+  if (!key) console.error(`paceva-garmin-mcp: no API key yet. Run: npx github:OwenScheuer/paceva-garmin-mcp setup`);
 }
 
 /** Ask for a line without echoing it, so the key never shows on screen. */
@@ -99,16 +99,16 @@ async function setup(): Promise<void> {
   out(`Saved to ${path} (only you can read it).\n`);
   out("Now add Paceva to your AI app:\n");
   out("  Claude Code:");
-  out("    claude mcp add garmin -- npx -y paceva-garmin-mcp\n");
+  out("    claude mcp add garmin -- npx -y github:OwenScheuer/paceva-garmin-mcp\n");
   out("  Claude Desktop, Cursor, VS Code and others: add this to the app's MCP servers:");
-  out(`    "garmin": { "command": "npx", "args": ["-y", "paceva-garmin-mcp"] }\n`);
+  out(`    "garmin": { "command": "npx", "args": ["-y", "github:OwenScheuer/paceva-garmin-mcp"] }\n`);
   out("Then ask: \"How did I sleep last night?\"");
 }
 
 async function check(): Promise<void> {
   const key = await findApiKey();
   if (!key) {
-    console.error("No key found. Run: npx paceva-garmin-mcp setup");
+    console.error("No key found. Run: npx github:OwenScheuer/paceva-garmin-mcp setup");
     process.exitCode = 1;
     return;
   }

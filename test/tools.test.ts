@@ -46,7 +46,7 @@ describe("tools", () => {
     const mcp = await connect(null);
     const r = await mcp.callTool({ name: "get_daily_overview", arguments: {} });
     expect(r.isError).toBe(true);
-    expect(text(r)).toMatch(/npx paceva-garmin-mcp setup/);
+    expect(text(r)).toMatch(/npx github:OwenScheuer\/paceva-garmin-mcp setup/);
   });
 
   it("builds the overview from four calls and keeps going when one fails", async () => {

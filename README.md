@@ -21,14 +21,14 @@ Ask Claude, ChatGPT or any MCP app about your own Garmin data: sleep, HRV, Body 
 
 ### Claude Desktop (easiest)
 
-Download **[paceva-garmin.mcpb](https://github.com/OwenScheuer/paceva-garmin-mcp/releases/latest/download/paceva-garmin.mcpb)**, double-click it, and paste your key when Claude asks. That's it.
+Download **[paceva-garmin.mcpb](https://paceva.app/download/paceva-garmin.mcpb)**, double-click it, and paste your key when Claude asks. That's it.
 
 ### Everything else
 
 These need [Node.js](https://nodejs.org) 20 or newer. First save your key (it's hidden as you paste and checked with Garmin):
 
 ```sh
-npx paceva-garmin-mcp setup
+npx github:OwenScheuer/paceva-garmin-mcp setup
 ```
 
 Then add the server:
@@ -36,7 +36,7 @@ Then add the server:
 **Claude Code**
 
 ```sh
-claude mcp add garmin -- npx -y paceva-garmin-mcp
+claude mcp add garmin -- npx -y github:OwenScheuer/paceva-garmin-mcp
 ```
 
 **Cursor, VS Code, Windsurf, Claude Desktop (manual) and others:** add to the app's MCP servers:
@@ -44,14 +44,14 @@ claude mcp add garmin -- npx -y paceva-garmin-mcp
 ```json
 {
   "mcpServers": {
-    "garmin": { "command": "npx", "args": ["-y", "paceva-garmin-mcp"] }
+    "garmin": { "command": "npx", "args": ["-y", "github:OwenScheuer/paceva-garmin-mcp"] }
   }
 }
 ```
 
 **ChatGPT** only connects to remote servers over the internet, not to local ones, so it can't use this yet.
 
-To check your key at any time: `npx paceva-garmin-mcp check`.
+To check your key at any time: `npx github:OwenScheuer/paceva-garmin-mcp check`.
 
 ## What it can read
 
@@ -85,8 +85,8 @@ Garmin's Personal API is for your own data. Each person uses their own key; plea
 
 ## Troubleshooting
 
-- **"Garmin didn't accept your Personal API key"**: it expired or was deleted. Make a new one, then run `npx paceva-garmin-mcp setup` again. (For the Claude Desktop extension, update the key in Settings › Extensions.)
-- **"No Garmin Personal API key found"**: run `npx paceva-garmin-mcp setup`.
+- **"Garmin didn't accept your Personal API key"**: it expired or was deleted. Make a new one, then run `npx github:OwenScheuer/paceva-garmin-mcp setup` again. (For the Claude Desktop extension, update the key in Settings › Extensions.)
+- **"No Garmin Personal API key found"**: run `npx github:OwenScheuer/paceva-garmin-mcp setup`.
 - **"Garmin is rate-limiting requests"**: wait a minute and ask again.
 
 ## Development
