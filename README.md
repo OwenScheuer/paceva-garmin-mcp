@@ -5,6 +5,7 @@ Ask Claude, ChatGPT or any MCP app about your own Garmin data: sleep, HRV, Body 
 > "How did I sleep last night?"
 > "Is my HRV trending down this month?"
 > "Compare my last three long runs."
+> "What could I run a half marathon in right now?"
 
 **Free, open source and local.** It runs on your computer with your own [Garmin Personal API key](https://connect.garmin.com/app/settings/personalApiToken). Your data goes from Garmin to your computer to your AI app, and never through anyone else's server. It's read-only: it can't change anything in Garmin Connect.
 
@@ -60,11 +61,14 @@ To check your key at any time: `npx paceva-garmin-mcp check`.
 | `get_hrv` | Overnight HRV, baseline and status |
 | `get_body_battery` | Charged, drained, high and low |
 | `get_stress` · `get_steps` · `get_heart_rate` · `get_spo2` | Daily stress, steps, heart rate and Pulse Ox |
+| `get_training_log` | Every workout in a period (up to a year) as one compact row: pace, grade-adjusted pace, heart rate, power, TSS, fastest splits, time in zones |
 | `list_activities` · `get_activity` | Your activities, and any one in full |
 | `get_profile` | Profile settings and heart rate zones |
 | `get_weight` · `get_fitness_age` · `get_hydration` · `get_food_log` · `get_menstrual_cycle` | The rest of what Garmin's Personal API offers |
 
-Ranges are capped at 92 days per call. Minute-by-minute series (heart rate through the day, sleep stages) come back as a count, min, max and average unless your AI asks for the full series.
+**Predictions are your AI's, from your raw data.** There's no prediction model in here: ask "what could I run a 10K in?" and your AI reads your training log and works it out, showing what it's based on.
+
+Ranges are capped at 92 days per call (a year for the training log). Minute-by-minute series (heart rate through the day, sleep stages) come back as a count, min, max and average unless your AI asks for the full series.
 
 Garmin's Personal API doesn't include training readiness, training status or recovery time, so neither does this.
 
