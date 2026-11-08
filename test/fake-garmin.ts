@@ -12,6 +12,8 @@ export type FakeOptions = {
   dataStatus?: number;
   /** Reject the first N bearer tokens with 401 (as if revoked). */
   revokeFirst?: number;
+  /** Status Garmin gives a wrong key at the token endpoint (a deleted key gets 404). */
+  badKeyStatus?: number;
 };
 
 export function fakeGarmin(opts: FakeOptions = {}) {
@@ -26,7 +28,7 @@ export function fakeGarmin(opts: FakeOptions = {}) {
     calls.push({ method: init?.method ?? "GET", path: url.pathname, search: url.search, auth });
 
     if (url.pathname.endsWith("/personal-api-key/token")) {
-      if (auth !== `ApiKey ${validKey}`) return new Response("bad key", { status: 401 });
+      if (auth !== `ApiKey ${validKey}`) return new Response("bad key", { status: opts.badKeyStatus ?? 401 });
       issued += 1;
       return new Response(jwt(24 * 3600), { status: 200 });
     }

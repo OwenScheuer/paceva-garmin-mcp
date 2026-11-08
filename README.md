@@ -17,7 +17,8 @@ Ask Claude or any MCP app about your own Garmin data: sleep, HRV, Body Battery, 
 
 1. Download **[paceva-garmin.mcpb](https://paceva.app/download/paceva-garmin.mcpb)** and open it.
 2. Claude asks for your Garmin key: open [Garmin Connect › Personal API Key](https://connect.garmin.com/app/settings/personalApiToken), select **Create Key**, copy it, paste it in.
-3. Ask Claude: "How did I sleep last night?"
+3. Switch **Paceva for Garmin** on. Claude installs extensions switched off.
+4. Ask Claude: "How did I sleep last night?"
 
 ### Everything else: one command
 

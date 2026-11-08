@@ -62,6 +62,12 @@ describe("GarminClient", () => {
     await expect(c.get("/a")).rejects.toThrow(/expired or been deleted.*personalApiToken/);
   });
 
+  it("treats a deleted key's 404 from the token endpoint as a bad key", async () => {
+    const g = fakeGarmin({ badKeyStatus: 404 });
+    const c = new GarminClient({ apiKey: "deleted", fetch: g.fetch, cacheFile: null });
+    await expect(c.get("/a")).rejects.toMatchObject({ status: 401, message: expect.stringMatching(/expired or been deleted/) });
+  });
+
   it("turns rate limits and server errors into plain messages", async () => {
     const limited = new GarminClient({
       apiKey: "good-key",

@@ -155,10 +155,11 @@ export class GarminClient {
       headers: { Accept: "*/*", Authorization: `ApiKey ${this.apiKey}` },
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-    if (res.status === 401 || res.status === 403) {
+    // A deleted key gets a 404 here, not a 401, so treat any 4xx as a bad key.
+    if (res.status >= 400 && res.status < 500 && res.status !== 429) {
       throw new GarminError(
         `Garmin didn't accept your Personal API key. It may have expired or been deleted. Create a new one at ${KEY_PAGE}, then run \`npx github:OwenScheuer/paceva-garmin-mcp --new-key\` in a terminal again.`,
-        res.status,
+        res.status === 403 ? 403 : 401,
       );
     }
     if (!res.ok) throw await httpError(res, TOKEN_PATH);
