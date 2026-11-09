@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: The server starts and lists its tools
+        run: node scripts/smoke.mjs dist/index.js
+      - name: The Claude Desktop download people actually get starts too
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri https://paceva.app/download/paceva-garmin.mcpb -OutFile served.zip
+          Expand-Archive served.zip -DestinationPath served
+          node scripts/smoke.mjs served/dist/index.js
+      - name: The one-line install works from GitHub
+        shell: bash
+        run: |
+          out="$(npx -y "github:${GITHUB_REPOSITORY}#${GITHUB_SHA}" check 2>&1 || true)"
+          echo "$out"
+          echo "$out" | grep -q "No key found"
