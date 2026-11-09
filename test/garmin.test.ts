@@ -28,7 +28,8 @@ describe("GarminClient", () => {
     const cacheFile = join(dir, "token.json");
     const g = fakeGarmin();
     await new GarminClient({ apiKey: "good-key", fetch: g.fetch, cacheFile }).get("/a");
-    expect((await stat(cacheFile)).mode & 0o777).toBe(0o600);
+    // Windows has no POSIX file modes; the user profile folder is what protects it there.
+    if (process.platform !== "win32") expect((await stat(cacheFile)).mode & 0o777).toBe(0o600);
     expect(await readFile(cacheFile, "utf8")).not.toContain("good-key");
 
     await new GarminClient({ apiKey: "good-key", fetch: g.fetch, cacheFile }).get("/a");

@@ -10,16 +10,24 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
+        node: [20, 24]
     runs-on: ${{ matrix.os }}
+    name: ${{ matrix.os }} / node ${{ matrix.node }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - name: It builds without Git's Unix tools, like a normal Windows PC
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -notmatch 'Git|msys|mingw|cygwin' }) -join ';'
+          npm run build
       - name: The server starts and lists its tools
         run: node scripts/smoke.mjs dist/index.js
       - name: The Claude Desktop download people actually get starts too
@@ -31,6 +39,9 @@ jobs:
       - name: The one-line install works from GitHub
         shell: bash
         run: |
+          echo "--- main, exactly what the website tells people to run"
+          npx -y "github:${GITHUB_REPOSITORY}" check 2>&1 | tail -5 || true
+          echo "--- this commit"
           out="$(npx -y "github:${GITHUB_REPOSITORY}#${GITHUB_SHA}" check 2>&1 || true)"
           echo "$out"
           echo "$out" | grep -q "No key found"
