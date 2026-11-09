@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        node: [20, 24]
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.os }} / node ${{ matrix.node }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: It builds without Git's Unix tools, like a normal Windows PC
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -notmatch 'Git|msys|mingw|cygwin' }) -join ';'
+          npm run build
+      - name: The server starts and lists its tools
+        run: node scripts/smoke.mjs dist/index.js
+      - name: The Claude Desktop download people actually get starts too
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri https://paceva.app/download/paceva-garmin.mcpb -OutFile served.zip
+          Expand-Archive served.zip -DestinationPath served
+          node scripts/smoke.mjs served/dist/index.js
+      - name: The one-line install works from GitHub
+        shell: bash
+        run: |
+          # npm 10 (Node 20) can't npx a pinned commit, so it runs what the website gives people.
+          spec="github:${GITHUB_REPOSITORY}"
+          if [ "${{ matrix.node }}" != "20" ]; then spec="${spec}#${GITHUB_SHA}"; fi
+          out="$(npx -y "$spec" check 2>&1 || true)"
+          echo "$out"
+          echo "$out" | grep -q "No key found"

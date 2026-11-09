@@ -1,6 +1,6 @@
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { addToConfig, appServer, jsonApps, looksLikeKey, SERVER } from "../src/install.js";
 
@@ -18,8 +18,8 @@ describe("looksLikeKey", () => {
 describe("jsonApps", () => {
   it("knows where Claude Desktop keeps its config on each platform", () => {
     const at = (p: NodeJS.Platform) => jsonApps("/h", p, { APPDATA: "C:\\A" })[0]!.file;
-    expect(at("darwin")).toBe("/h/Library/Application Support/Claude/claude_desktop_config.json");
-    expect(at("linux")).toBe("/h/.config/Claude/claude_desktop_config.json");
+    expect(at("darwin").replaceAll("\\", "/")).toBe("/h/Library/Application Support/Claude/claude_desktop_config.json");
+    expect(at("linux").replaceAll("\\", "/")).toBe("/h/.config/Claude/claude_desktop_config.json");
     expect(at("win32")).toContain("Claude");
   });
 });
@@ -30,7 +30,7 @@ describe("appServer", () => {
     expect(entry.args).toEqual(SERVER.args);
     if (entry.env) {
       expect(entry.command).toMatch(/npx(\.cmd)?$/);
-      expect(entry.env.PATH!.split(/[:;]/)[0]).toBe(join(process.execPath, ".."));
+      expect(entry.env.PATH!.split(delimiter)[0]).toBe(join(process.execPath, ".."));
     }
   });
   it("falls back to plain npx when there's none beside Node", () => {
