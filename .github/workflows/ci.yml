@@ -39,9 +39,9 @@ jobs:
       - name: The one-line install works from GitHub
         shell: bash
         run: |
-          echo "--- main, exactly what the website tells people to run"
-          npx -y "github:${GITHUB_REPOSITORY}" check 2>&1 | tail -5 || true
-          echo "--- this commit"
-          out="$(npx -y "github:${GITHUB_REPOSITORY}#${GITHUB_SHA}" check 2>&1 || true)"
+          # npm 10 (Node 20) can't npx a pinned commit, so it runs what the website gives people.
+          spec="github:${GITHUB_REPOSITORY}"
+          if [ "${{ matrix.node }}" != "20" ]; then spec="${spec}#${GITHUB_SHA}"; fi
+          out="$(npx -y "$spec" check 2>&1 || true)"
           echo "$out"
           echo "$out" | grep -q "No key found"
